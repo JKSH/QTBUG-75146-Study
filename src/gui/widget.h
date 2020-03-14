@@ -43,6 +43,7 @@ public:
 	ResultWidget(QWidget* parent = nullptr);
 
 	void setIntersectionPoint(const QPointF& point);
+	void setIntersectionType(QLineF::IntersectionType type);
 	void setSegmentRelations(MyLineF::SegmentRelations relations);
 
 private:

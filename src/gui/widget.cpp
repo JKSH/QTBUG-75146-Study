@@ -4,6 +4,8 @@
 #include "mylinef.h"
 
 #include <QGraphicsLineItem>
+#include <QLineEdit>
+
 #include <QDebug>
 
 #include <cmath>
@@ -140,30 +142,18 @@ void Widget::updateSegments()
 
 
 	// Old enum
-	auto showIntersection = [&](QLabel* label, QLineEdit* xOutput, QLineEdit* yOutput,
+	auto showIntersection = [&](ResultWidget* output,
 			std::function<QLineF::IntersectionType(MyLineF*, const MyLineF&, QPointF*)> intersectionFunc)
 	{
 		QPointF i(Q_QNAN, Q_QNAN);
 		QLineF::IntersectionType type = intersectionFunc(&myLine1, myLine2, &i);
-		switch (type)
-		{
-		case QLineF::NoIntersection:
-			label->setText("NoIntersection");
-			break;
-		case QLineF::BoundedIntersection:
-			label->setText("BoundedIntersection");
-			break;
-		case QLineF::UnboundedIntersection:
-			label->setText("UnboundedIntersection");
-			break;
-		}
-		xOutput->setText( QString::number(i.x(), 'E', ui->dsb_l1x1->decimals()) );
-		yOutput->setText( QString::number(i.y(), 'E', ui->dsb_l1x1->decimals()) );
+		output->setIntersectionPoint(i);
+		output->setIntersectionType(type);
 	};
 
-	showIntersection(ui->label_iType_flsiOrig, ui->le_ix_flsiOrig, ui->le_iy_flsiOrig, &MyLineF::intersects_flsiOrig);
-	showIntersection(ui->label_iType_flsiTweaked, ui->le_ix_flsiTweaked, ui->le_iy_flsiTweaked, &MyLineF::intersects_flsiTweaked);
-	showIntersection(ui->label_iType_gaussElim, ui->le_ix_gaussElim, ui->le_iy_gaussElim, &MyLineF::intersects_gaussElim);
+	showIntersection(ui->result_flsiOrig, &MyLineF::intersects_flsiOrig);
+	showIntersection(ui->result_flsiTweaked, &MyLineF::intersects_flsiTweaked);
+	showIntersection(ui->result_gaussElim, &MyLineF::intersects_gaussElim);
 
 
 	// New enum
@@ -210,6 +200,22 @@ void ResultWidget::setIntersectionPoint(const QPointF& point)
 {
 	m_x->setText( QString::number(point.x(), 'E', m_decimals) );
 	m_y->setText( QString::number(point.y(), 'E', m_decimals) );
+}
+
+void ResultWidget::setIntersectionType(QLineF::IntersectionType type)
+{
+	switch (type)
+	{
+	case QLineF::NoIntersection:
+		m_label->setText("NoIntersection");
+		break;
+	case QLineF::BoundedIntersection:
+		m_label->setText("BoundedIntersection");
+		break;
+	case QLineF::UnboundedIntersection:
+		m_label->setText("UnboundedIntersection");
+		break;
+	}
 }
 
 void ResultWidget::setSegmentRelations(MyLineF::SegmentRelations relations)
