@@ -3,8 +3,11 @@
 
 class DraggableCircle;
 class QGraphicsLineItem;
+class QLabel;
+class QLineEdit;
 
 #include <QSplitter>
+#include "mylinef.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class Widget; }
@@ -30,4 +33,23 @@ private:
 	QGraphicsLineItem* l1;
 	QGraphicsLineItem* l2;
 };
+
+
+class ResultWidget : public QWidget
+{
+	Q_OBJECT
+
+public:
+	ResultWidget(QWidget* parent = nullptr);
+
+	void setIntersectionPoint(const QPointF& point);
+	void setSegmentRelations(MyLineF::SegmentRelations relations);
+
+private:
+	QLineEdit* m_x;
+	QLineEdit* m_y;
+	QLabel* m_label;
+	int m_decimals;
+};
+
 #endif // WIDGET_H

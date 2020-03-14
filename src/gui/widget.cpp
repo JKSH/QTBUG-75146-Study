@@ -169,17 +169,8 @@ void Widget::updateSegments()
 	// New enum
 	QPointF i(Q_QNAN, Q_QNAN);
 	MyLineF::SegmentRelations relations = myLine1.intersects_flsiV2(myLine2, &i);
-
-	QStringList reportList;
-	if (relations.testFlag(MyLineF::LinesIntersect))
-		reportList << "LinesIntersect";
-	if (relations.testFlag(MyLineF::SegmentsIntersect))
-		reportList << "SegmentsIntersect";
-	if (relations.testFlag(MyLineF::Parallel))
-		reportList << "Parallel";
-	ui->label_iType_v2->setText(reportList.join(" | "));
-	ui->le_ix_v2->setText( QString::number(i.x(), 'E', ui->dsb_l1x1->decimals()) );
-	ui->le_iy_v2->setText( QString::number(i.y(), 'E', ui->dsb_l1x1->decimals()) );
+	ui->result_flsiV2->setIntersectionPoint(i);
+	ui->result_flsiV2->setSegmentRelations(relations);
 
 
 	// QGraphicsEllipseItem::pos() refers to the top-left corner of the bounding rect
@@ -193,4 +184,42 @@ void Widget::updateSegments()
 	auto yBounds = std::minmax({myLine1.p1().y(), myLine1.p2().y(), myLine2.p1().y(), myLine2.p2().y()});
 	QRectF bounds(QPointF(xBounds.first, yBounds.first), QPointF(xBounds.second+2*r, yBounds.second+2*r));
 	ui->graphicsView->setSceneRect( bounds );
+}
+
+//=============
+// ResultWidget
+//=============
+ResultWidget::ResultWidget(QWidget* parent) :
+	QWidget(parent),
+	m_x(new QLineEdit),
+	m_y(new QLineEdit),
+	m_label(new QLabel),
+	m_decimals(20)
+{
+	m_x->setReadOnly(true);
+	m_y->setReadOnly(true);
+
+	auto layout = new QGridLayout(this);
+	layout->addWidget(m_x, 0, 0);
+	layout->addWidget(m_y, 0, 1);
+	layout->addWidget(m_label, 1, 0, 1, 2);
+	setLayout(layout);
+}
+
+void ResultWidget::setIntersectionPoint(const QPointF& point)
+{
+	m_x->setText( QString::number(point.x(), 'E', m_decimals) );
+	m_y->setText( QString::number(point.y(), 'E', m_decimals) );
+}
+
+void ResultWidget::setSegmentRelations(MyLineF::SegmentRelations relations)
+{
+	QStringList reportList;
+	if (relations.testFlag(MyLineF::LinesIntersect))
+		reportList << "LinesIntersect";
+	if (relations.testFlag(MyLineF::SegmentsIntersect))
+		reportList << "SegmentsIntersect";
+	if (relations.testFlag(MyLineF::Parallel))
+		reportList << "Parallel";
+	m_label->setText(reportList.join(" | "));
 }
