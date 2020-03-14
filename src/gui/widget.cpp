@@ -37,9 +37,10 @@ static const QMap<QString, EndpointCoords> presets
 	},
 	{ "08. QTBUG-75146 Parallel unbounded", {0.0, 0.0, 4.0, 3.0, 8.0, 6.0, 10.0, 7.5} },
 	{ "09. QTBUG-75146 Parallel bounded", {0.0, 0.0, 4.0, 3.0, 4.0, 3.0, 10.0, 7.5} },
-	{ "10. Unit Vectors", {0, 0, 0, 1, 0, 0, 1, 0} },
-	{ "11. Tiny vectors near origin", {1E-10, 1E-10, 0, 1E-10, 1E-10, 1E-10, 1E-10, 0} },
-	{ "12. Sub-epsilon vectors near origin", {1E-18, 1E-18, 0, 1E-18, 1E-18, 1E-18, 1E-18, 0} }
+	{ "10. QTBUG-75146 Parallel nested", {2.0, 1.0, 1.0, 1.0, -1.0, 1.0, 4.0, 1.0} },
+	{ "11. Unit Vectors", {0, 0, 0, 1, 0, 0, 1, 0} },
+	{ "12. Tiny vectors near origin", {1E-10, 1E-10, 0, 1E-10, 1E-10, 1E-10, 1E-10, 0} },
+	{ "13. Sub-epsilon vectors near origin", {1E-18, 1E-18, 0, 1E-18, 1E-18, 1E-18, 1E-18, 0} }
 };
 
 Widget::Widget(QSplitter *parent) :
@@ -153,7 +154,7 @@ void Widget::updateSegments()
 
 	showIntersection(ui->result_flsiOrig, &MyLineF::intersects_flsiOrig);
 	showIntersection(ui->result_flsiTweaked, &MyLineF::intersects_flsiTweaked);
-	showIntersection(ui->result_gaussElim, &MyLineF::intersects_gaussElim);
+
 
 
 	// New enum
@@ -162,6 +163,10 @@ void Widget::updateSegments()
 	ui->result_flsiV2->setIntersectionPoint(i);
 	ui->result_flsiV2->setSegmentRelations(relations);
 
+	i = { Q_QNAN, Q_QNAN };
+	relations = myLine1.intersects_gaussElim(myLine2, &i);
+	ui->result_gaussElim->setIntersectionPoint(i);
+	ui->result_gaussElim->setSegmentRelations(relations);
 
 	// QGraphicsEllipseItem::pos() refers to the top-left corner of the bounding rect
 	// ASSUMPTION: All endpoints have the same radius

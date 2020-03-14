@@ -11,6 +11,7 @@ class MyLineF : public QLineF
 public:
 	enum SegmentRelation
 	{
+		NoRelation = 0,
 		LinesIntersect = 0x1,
 		SegmentsIntersect = 0x2,
 		Parallel = 0x4
@@ -46,7 +47,7 @@ public:
 	// Using the old enum meanings with various algorithms
 	IntersectionType intersects_flsiOrig(const QLineF& l, QPointF* intersectionPoint = nullptr) const;
 	IntersectionType intersects_flsiTweaked(const QLineF& l, QPointF* intersectionPoint = nullptr) const;
-	IntersectionType intersects_gaussElim(const QLineF& l, QPointF* intersectionPoint = nullptr) const;
+	SegmentRelations intersects_gaussElim(const QLineF& l, QPointF* intersectionPoint = nullptr) const;
 
 	// Using a new enum, new algorithms
 	SegmentRelations intersects_flsiV2(const QLineF& l, QPointF* intersectionPoint = nullptr) const;

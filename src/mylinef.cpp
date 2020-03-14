@@ -7,84 +7,93 @@
 	Implementation by Konstantin Shegunov
 	https://codereview.qt-project.org/c/qt/qtbase/+/292807
 */
-QLineF::IntersectionType
-MyLineF::intersects_gaussElim(const QLineF &l, QPointF *intersectionPoint) const
+MyLineF::SegmentRelations MyLineF::intersects_gaussElim(const QLineF &l, QPointF *intersectionPoint) const
 {
+	QPointF origin = p1(), lorigin = l.p1(), dir = p2() - origin, ldir = l.p2() - lorigin, v = lorigin - origin;
 	qreal matrix[2][3] = {
-		{ p2().x() - p1().x(), l.p1().x() - l.p2().x(), l.p1().x() - p1().x() },
-		{ p2().y() - p1().y(), l.p1().y() - l.p2().y(), l.p1().y() - p1().y() }
+		{ dir.x(), -ldir.x(), v.x() },
+		{ dir.y(), -ldir.y(), v.y() }
 	};
-	bool columnsExchanged = false;  // In the general case this'd be the (column) permutation matrix
-	auto swapRows = [&matrix] () -> void {
+
+	// Select the pivot, i.e. bring the heaviest element by abs value to position (0, 0)
+	if (qAbs(matrix[0][1]) > qAbs(matrix[0][0]) || qAbs(matrix[1][1]) > qAbs(matrix[0][0]))  {
+		// Swap the columns
+		qSwap(matrix[0][0], matrix[0][1]);
+		qSwap(matrix[1][0], matrix[1][1]);
+
+		qSwap(origin, lorigin);
+		qSwap(dir, ldir);
+	}
+	if (qAbs(matrix[1][0]) > qAbs(matrix[0][0]))  {
+		// Swap the rows
 		qSwap(matrix[0][0], matrix[1][0]);
 		qSwap(matrix[0][1], matrix[1][1]);
 		qSwap(matrix[0][2], matrix[1][2]);
-	};
-
-	auto swapColumns = [&matrix, &columnsExchanged] () -> void {
-		columnsExchanged = true;
-		qSwap(matrix[0][0], matrix[0][1]);
-		qSwap(matrix[1][0], matrix[1][1]);
-	};
-
-	// Select the pivot
-	if (qAbs(matrix[0][1]) > qAbs(matrix[0][0]) || qAbs(matrix[1][1]) > qAbs(matrix[0][0]))
-		swapColumns();
-	if (qAbs(matrix[1][0]) > qAbs(matrix[0][0]))
-		swapRows();
+	}
 
 	// Bring to row-echelon form (i.e. Gauss eliminate)
+	qreal pivot = 1 / matrix[0][0];
+
+	matrix[1][0] *= -pivot;
 	for (int i = 2; i > 0; i--)
-		matrix[1][i] = std::fma(matrix[1][0], -matrix[0][i] / matrix[0][0], matrix[1][i]);
+		matrix[1][i] = std::fma(matrix[1][0], matrix[0][i], matrix[1][i]);
 
 	// Check if we are rank deficient and deal with it accordingly
-	if (qAbs(matrix[1][1]) < qAbs(matrix[0][0]) * std::numeric_limits<qreal>::epsilon()) {
-		// Calculate the line parameter and the tolerance base value
-		qreal na, nb, n = matrix[0][2] / matrix[0][0];
-		qreal tolerance = 2 * std::numeric_limits<qreal>::epsilon();
+	if (qAbs(matrix[1][1]) < qAbs(matrix[0][0]) * std::numeric_limits<qreal>::epsilon())  {
+		// Solve for the origin point
+		qreal n = pivot * matrix[0][2];
 
 		// We need to handle the edge case where the lines are parallel, but still their continuations meet (i.e. it's the same line)
-		if (columnsExchanged) {
-			qreal diff = qAbs(std::fma(n, l.p2().x() - l.p1().x(), l.p1().x() - p1().x()) * p1().y())
-					+ qAbs(std::fma(n, l.p2().y() - l.p1().y(), l.p1().y() - p1().y()) * p1().x());
-			tolerance *= qAbs(p1().x() * p1().y());
+		// Check if the origin point is the same (thus the segments lie on the same line)
+		QPointF r = { std::fma(n, dir.x(), origin.x()), std::fma(n, dir.y(), origin.y()) };
+		if (qAbs(r.x() * lorigin.y() - r.y() * lorigin.x()) > 2 * std::numeric_limits<qreal>::epsilon() * qAbs(lorigin.x() * lorigin.y()))
+			return Parallel;
 
-			if (diff > tolerance)
-				return NoIntersection;
+		// Solve for the end point
+		qreal n2 = pivot * (matrix[0][2] - matrix[0][1]);
+		// Normal order the parameters
+		if (n > n2)
+			qSwap(n, n2);
 
-			na = 0;
-			nb = n;
-
-			if (intersectionPoint)
-				*intersectionPoint = p1();
-		} else {
-			qreal diff = qAbs(std::fma(n, p2().x() - p1().x(), p1().x() - l.p1().x()) * l.p1().y())
-					+ qAbs(std::fma(n, p2().y() - p1().y(), p1().y() - l.p1().y()) * l.p1().x());
-			tolerance *= qAbs(l.p1().x() * l.p1().y());
-
-			if (diff > tolerance)
-				return NoIntersection;
-
-			na = n;
-			nb = 0;
-			if (intersectionPoint)
-				*intersectionPoint = l.p1();
+		// Check the type of intersection and find the midpoint for it
+		qreal mid = 0;
+		SegmentRelations relation = Parallel | LinesIntersect;
+		if (n < 0)  {
+			if (n2 > 1) {
+				mid = qreal(0.5);
+				relation |= SegmentsIntersect;
+			}
+			else {
+				if (n2 >= 0)
+					relation |= SegmentsIntersect;
+				mid = qreal(0.5) * n2;
+			}
 		}
+		else if (n <= 1)  {
+			relation |= SegmentsIntersect;
+			mid = qreal(0.5) * (n + (n2 > 1 ? 1 : n2));
+		}
+		else
+			mid = qreal(0.5) * (1 + n);
 
-		Q_UNUSED(na)
-		Q_UNUSED(nb)
-
-		return NoIntersection;
+		// Calculate the intersection point if required
+		if (intersectionPoint)
+			*intersectionPoint = { std::fma(mid, dir.x(), origin.x()), std::fma(mid, dir.y(), origin.y()) };
+		return relation;
 	}
+
 	// We are not near-singular, back-substitute normally
 	qreal nb = matrix[1][2] / matrix[1][1];
-	qreal na = std::fma(-nb, matrix[0][1], matrix[0][2]) / matrix[0][0];
-	if (intersectionPoint)  {   // Calculate the actual intersection point only if we need to
-		if (columnsExchanged)
-			qSwap(na, nb);
-		*intersectionPoint = { std::fma(na, p2().x() - p1().x(), p1().x()), std::fma(na, p2().y() - p1().y(), p1().y()) };
-	}
-	return (na >= 0 && na <= 1 && nb >= 0 && nb <= 1) ? BoundedIntersection : UnboundedIntersection;
+	// Calculate the actual intersection point only if we need to
+	if (intersectionPoint)
+		*intersectionPoint = { std::fma(nb, ldir.x(), lorigin.x()), std::fma(nb, ldir.y(), lorigin.y()) };
+
+	// Check and return the line intersection type
+	if (nb < 0 || nb > 1)
+		return LinesIntersect;
+
+	qreal na = pivot * std::fma(-nb, matrix[0][1], matrix[0][2]);
+	return LinesIntersect | ((na >= 0 && na <= 1) ? SegmentsIntersect : NoRelation);
 }
 
 /*
