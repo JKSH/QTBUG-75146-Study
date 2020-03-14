@@ -247,52 +247,10 @@
        <string>Results</string>
       </property>
       <layout class="QGridLayout" name="gridLayout_2">
-       <item row="11" column="1" colspan="2">
-        <widget class="QLabel" name="label_iType_v2">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="0" rowspan="2">
-        <widget class="QLabel" name="label_12">
-         <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;X-Pt&lt;/p&gt;&lt;p&gt;(V2)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-        </widget>
-       </item>
        <item row="0" column="2">
         <widget class="QLabel" name="label_8">
          <property name="text">
           <string>y</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="1" colspan="2">
-        <widget class="QLabel" name="label_iType_gaussElim">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="2">
-        <widget class="QLineEdit" name="le_iy_gaussElim">
-         <property name="readOnly">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QLineEdit" name="le_ix_flsiOrig">
-         <property name="readOnly">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="1">
-        <widget class="QLineEdit" name="le_ix_flsiTweaked">
-         <property name="readOnly">
-          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -319,27 +277,6 @@
          </property>
         </widget>
        </item>
-       <item row="5" column="1" colspan="2">
-        <widget class="QLabel" name="label_iType_flsiTweaked">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="2">
-        <widget class="QLineEdit" name="le_iy_flsiOrig">
-         <property name="readOnly">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="0" rowspan="2">
-        <widget class="QLabel" name="label_10">
-         <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;X-Pt&lt;/p&gt;&lt;p&gt;(Orig. Tweaked)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-        </widget>
-       </item>
        <item row="12" column="0">
         <spacer name="verticalSpacer_4">
          <property name="orientation">
@@ -352,34 +289,6 @@
           </size>
          </property>
         </spacer>
-       </item>
-       <item row="10" column="2">
-        <widget class="QLineEdit" name="le_iy_v2">
-         <property name="readOnly">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="0" rowspan="2">
-        <widget class="QLabel" name="label_11">
-         <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;X-Pt&lt;/p&gt;&lt;p&gt;(Gauss. Elim.)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-        </widget>
-       </item>
-       <item row="7" column="1">
-        <widget class="QLineEdit" name="le_ix_gaussElim">
-         <property name="readOnly">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1" colspan="2">
-        <widget class="QLabel" name="label_iType_flsiOrig">
-         <property name="text">
-          <string/>
-         </property>
-        </widget>
        </item>
        <item row="6" column="0">
         <spacer name="verticalSpacer_3">
@@ -397,27 +306,6 @@
          </property>
         </spacer>
        </item>
-       <item row="1" column="0" rowspan="2">
-        <widget class="QLabel" name="label_7">
-         <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;X-Pt&lt;/p&gt;&lt;p&gt;(Orig.)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="2">
-        <widget class="QLineEdit" name="le_iy_flsiTweaked">
-         <property name="readOnly">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="10" column="1">
-        <widget class="QLineEdit" name="le_ix_v2">
-         <property name="readOnly">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
        <item row="9" column="0">
         <spacer name="verticalSpacer_5">
          <property name="orientation">
@@ -434,6 +322,46 @@
          </property>
         </spacer>
        </item>
+       <item row="10" column="0">
+        <widget class="QLabel" name="label_12">
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;X-Pt&lt;/p&gt;&lt;p&gt;(V2)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+        </widget>
+       </item>
+       <item row="10" column="1" colspan="2">
+        <widget class="ResultWidget" name="result_flsiV2" native="true"/>
+       </item>
+       <item row="1" column="1" colspan="2">
+        <widget class="ResultWidget" name="result_flsiOrig" native="true"/>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_7">
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;X-Pt&lt;/p&gt;&lt;p&gt;(Orig.)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1" colspan="2">
+        <widget class="ResultWidget" name="result_flsiTweaked" native="true"/>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="label_10">
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;X-Pt&lt;/p&gt;&lt;p&gt;(Orig. Tweaked)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="1" colspan="2">
+        <widget class="ResultWidget" name="result_gaussElim" native="true"/>
+       </item>
+       <item row="7" column="0">
+        <widget class="QLabel" name="label_11">
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;X-Pt&lt;/p&gt;&lt;p&gt;(Gauss. Elim.)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+        </widget>
+       </item>
       </layout>
      </widget>
     </item>
@@ -445,6 +373,12 @@
    <class>FlexibleDoubleSpinBox</class>
    <extends>QWidget</extends>
    <header>gui/flexibledoublespinbox.h</header>
+  </customwidget>
+  <customwidget>
+   <class>ResultWidget</class>
+   <extends>QWidget</extends>
+   <header>gui/widget.h</header>
+   <container>1</container>
   </customwidget>
  </customwidgets>
  <resources/>

@@ -4,6 +4,8 @@
 #include "mylinef.h"
 
 #include <QGraphicsLineItem>
+#include <QLineEdit>
+
 #include <QDebug>
 
 #include <cmath>
@@ -140,46 +142,25 @@ void Widget::updateSegments()
 
 
 	// Old enum
-	auto showIntersection = [&](QLabel* label, QLineEdit* xOutput, QLineEdit* yOutput,
+	auto showIntersection = [&](ResultWidget* output,
 			std::function<QLineF::IntersectionType(MyLineF*, const MyLineF&, QPointF*)> intersectionFunc)
 	{
 		QPointF i(Q_QNAN, Q_QNAN);
 		QLineF::IntersectionType type = intersectionFunc(&myLine1, myLine2, &i);
-		switch (type)
-		{
-		case QLineF::NoIntersection:
-			label->setText("NoIntersection");
-			break;
-		case QLineF::BoundedIntersection:
-			label->setText("BoundedIntersection");
-			break;
-		case QLineF::UnboundedIntersection:
-			label->setText("UnboundedIntersection");
-			break;
-		}
-		xOutput->setText( QString::number(i.x(), 'E', ui->dsb_l1x1->decimals()) );
-		yOutput->setText( QString::number(i.y(), 'E', ui->dsb_l1x1->decimals()) );
+		output->setIntersectionPoint(i);
+		output->setIntersectionType(type);
 	};
 
-	showIntersection(ui->label_iType_flsiOrig, ui->le_ix_flsiOrig, ui->le_iy_flsiOrig, &MyLineF::intersects_flsiOrig);
-	showIntersection(ui->label_iType_flsiTweaked, ui->le_ix_flsiTweaked, ui->le_iy_flsiTweaked, &MyLineF::intersects_flsiTweaked);
-	showIntersection(ui->label_iType_gaussElim, ui->le_ix_gaussElim, ui->le_iy_gaussElim, &MyLineF::intersects_gaussElim);
+	showIntersection(ui->result_flsiOrig, &MyLineF::intersects_flsiOrig);
+	showIntersection(ui->result_flsiTweaked, &MyLineF::intersects_flsiTweaked);
+	showIntersection(ui->result_gaussElim, &MyLineF::intersects_gaussElim);
 
 
 	// New enum
 	QPointF i(Q_QNAN, Q_QNAN);
 	MyLineF::SegmentRelations relations = myLine1.intersects_flsiV2(myLine2, &i);
-
-	QStringList reportList;
-	if (relations.testFlag(MyLineF::LinesIntersect))
-		reportList << "LinesIntersect";
-	if (relations.testFlag(MyLineF::SegmentsIntersect))
-		reportList << "SegmentsIntersect";
-	if (relations.testFlag(MyLineF::Parallel))
-		reportList << "Parallel";
-	ui->label_iType_v2->setText(reportList.join(" | "));
-	ui->le_ix_v2->setText( QString::number(i.x(), 'E', ui->dsb_l1x1->decimals()) );
-	ui->le_iy_v2->setText( QString::number(i.y(), 'E', ui->dsb_l1x1->decimals()) );
+	ui->result_flsiV2->setIntersectionPoint(i);
+	ui->result_flsiV2->setSegmentRelations(relations);
 
 
 	// QGraphicsEllipseItem::pos() refers to the top-left corner of the bounding rect
@@ -193,4 +174,59 @@ void Widget::updateSegments()
 	auto yBounds = std::minmax({myLine1.p1().y(), myLine1.p2().y(), myLine2.p1().y(), myLine2.p2().y()});
 	QRectF bounds(QPointF(xBounds.first, yBounds.first), QPointF(xBounds.second+2*r, yBounds.second+2*r));
 	ui->graphicsView->setSceneRect( bounds );
+}
+
+//=============
+// ResultWidget
+//=============
+ResultWidget::ResultWidget(QWidget* parent) :
+	QWidget(parent),
+	m_x(new QLineEdit),
+	m_y(new QLineEdit),
+	m_label(new QLabel),
+	m_decimals(20)
+{
+	m_x->setReadOnly(true);
+	m_y->setReadOnly(true);
+
+	auto layout = new QGridLayout(this);
+	layout->addWidget(m_x, 0, 0);
+	layout->addWidget(m_y, 0, 1);
+	layout->addWidget(m_label, 1, 0, 1, 2);
+	layout->setContentsMargins(0, 0, 0, 0);
+	setLayout(layout);
+}
+
+void ResultWidget::setIntersectionPoint(const QPointF& point)
+{
+	m_x->setText( QString::number(point.x(), 'E', m_decimals) );
+	m_y->setText( QString::number(point.y(), 'E', m_decimals) );
+}
+
+void ResultWidget::setIntersectionType(QLineF::IntersectionType type)
+{
+	switch (type)
+	{
+	case QLineF::NoIntersection:
+		m_label->setText("NoIntersection");
+		break;
+	case QLineF::BoundedIntersection:
+		m_label->setText("BoundedIntersection");
+		break;
+	case QLineF::UnboundedIntersection:
+		m_label->setText("UnboundedIntersection");
+		break;
+	}
+}
+
+void ResultWidget::setSegmentRelations(MyLineF::SegmentRelations relations)
+{
+	QStringList reportList;
+	if (relations.testFlag(MyLineF::LinesIntersect))
+		reportList << "LinesIntersect";
+	if (relations.testFlag(MyLineF::SegmentsIntersect))
+		reportList << "SegmentsIntersect";
+	if (relations.testFlag(MyLineF::Parallel))
+		reportList << "Parallel";
+	m_label->setText(reportList.join(" | "));
 }
