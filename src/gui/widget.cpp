@@ -193,6 +193,7 @@ ResultWidget::ResultWidget(QWidget* parent) :
 	layout->addWidget(m_x, 0, 0);
 	layout->addWidget(m_y, 0, 1);
 	layout->addWidget(m_label, 1, 0, 1, 2);
+	layout->setContentsMargins(0, 0, 0, 0);
 	setLayout(layout);
 }
 
