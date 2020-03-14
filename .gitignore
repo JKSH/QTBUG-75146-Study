@@ -1,2 +1,7 @@
 build-*
 *.pro.user
+*.o
+moc_*.cpp
+ui_*.h
+debug/*
+release/*
