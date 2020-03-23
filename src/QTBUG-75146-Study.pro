@@ -17,7 +17,8 @@ HEADERS += \
     gui/draggablecircle.h \
     gui/flexibledoublespinbox.h \
     gui/widget.h \
-    mylinef.h
+    mylinef.h \
+    tests.h
 
 FORMS += \
 	gui/widget.ui
