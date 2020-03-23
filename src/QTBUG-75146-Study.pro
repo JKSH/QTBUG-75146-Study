@@ -10,7 +10,8 @@ SOURCES += \
     gui/draggablecircle.cpp \
     gui/widget.cpp \
     main.cpp \
-    mylinef.cpp
+    mylinef.cpp \
+    tests.cpp
 
 HEADERS += \
     algorithms.h \

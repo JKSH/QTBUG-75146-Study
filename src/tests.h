@@ -1,7 +1,10 @@
 #ifndef TESTS_H
 #define TESTS_H
 
+#include "mylinef.h"
+
 #include <QMap>
+#include <QMetaObject>
 
 struct EndpointCoords
 {
@@ -10,6 +13,8 @@ struct EndpointCoords
 	qreal l2x1, l2y1;
 	qreal l2x2, l2y2;
 };
+
+struct SegmentPair { MyLineF l1, l2; };
 
 const QMap<QString, EndpointCoords> presets
 {
@@ -34,6 +39,38 @@ const QMap<QString, EndpointCoords> presets
 	{ "11. Unit Vectors", {0, 0, 0, 1, 0, 0, 1, 0} },
 	{ "12. Tiny vectors near origin", {1E-10, 1E-10, 0, 1E-10, 1E-10, 1E-10, 1E-10, 0} },
 	{ "13. Sub-epsilon vectors near origin", {1E-18, 1E-18, 0, 1E-18, 1E-18, 1E-18, 1E-18, 0} }
+};
+
+class Benchmarker
+{
+	Q_GADGET
+
+public:
+	// TODO: Differentiate between collinear and parallel
+	enum Category
+	{
+		PresetParallel,
+		PresetParallelSwapped,
+		PresetNonParallel,
+		PresetNonParallelSwapped,
+		MonteCarlo,
+		MonteCarloSwapped
+	};
+	Q_ENUM(Category)
+
+	void setIterationsPerFunction(int n) { m_iterationsPerFunction = n; }
+	void setMonteCarloCaseCount(int n) { m_nMonteCarloCases = n; }
+	void setRandomSeed(uint seed) { m_randomSeed = seed; }
+
+	void runBenchmarks() const;
+	// TODO: Compare outputs of different functions, check for discrepencies
+
+private:
+	QVector<SegmentPair> getTestSet(Category category) const;
+
+	int m_iterationsPerFunction = 10000000;
+	int m_nMonteCarloCases = 100000;
+	uint m_randomSeed = 1;
 };
 
 #endif // TESTS_H
