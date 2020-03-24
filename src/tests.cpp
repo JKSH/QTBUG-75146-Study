@@ -85,8 +85,13 @@ Benchmarker::getTestSet(Benchmarker::Category category) const
 	Q_UNREACHABLE();
 }
 
-void Benchmarker::runBenchmarks() const
+void Benchmarker::runSpeedBenchmarks() const
 {
+	QTextStream(stdout)
+			<< "================"  "\n"
+			<< "Speed Benchmarks"  "\n"
+			<< "================"  "\n";
+
 	QElapsedTimer timer;
 	auto benchmarkEnum = QMetaEnum::fromType<Benchmarker::Category>();
 
@@ -112,6 +117,7 @@ void Benchmarker::runBenchmarks() const
 			qreal duration = timer.nsecsElapsed();
 			QTextStream(stdout) << QString("\t%1:\t%2 ns per call\n").arg(funcInfo.name).arg(duration/m_iterationsPerFunction);
 		}
+		QTextStream(stdout) << '\n';
 	}
 }
 

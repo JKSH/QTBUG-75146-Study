@@ -62,7 +62,7 @@ public:
 	void setMonteCarloCaseCount(int n) { m_nMonteCarloCases = n; }
 	void setRandomSeed(uint seed) { m_randomSeed = seed; }
 
-	void runBenchmarks() const;
+	void runSpeedBenchmarks() const;
 	void runAccuracyBenchmarks() const;
 
 private:
