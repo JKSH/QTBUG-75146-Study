@@ -15,6 +15,7 @@ struct TestFunctionInfo
 
 const QVector<TestFunctionInfo> testFunctions
 {
+	{"intersects_eddy       ", &MyLineF::intersects_eddy},
 	{"intersects_flsiOrig   ", &MyLineF::intersects_flsiOrig},
 	{"intersects_flsiTweaked", &MyLineF::intersects_flsiTweaked},
 	{"intersects_flsiV2     ", &MyLineF::intersects_flsiV2},
