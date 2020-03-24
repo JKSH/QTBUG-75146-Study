@@ -22,7 +22,9 @@ int main(int argc, char *argv[])
 	benchmarker.setIterationsPerFunction(10000000);
 	benchmarker.setMonteCarloCaseCount(100000);
 	benchmarker.setRandomSeed(1);
+
 	benchmarker.runBenchmarks();
+	benchmarker.runAccuracyBenchmarks();
 
 	return 0;
 #endif

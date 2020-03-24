@@ -41,6 +41,7 @@ public:
 		- Collinear, non-overlapping
 	*/
 
+	MyLineF() : QLineF(0, 0, 0, 0) {}
 	MyLineF(qreal x1, qreal y1, qreal x2, qreal y2) : QLineF(x1, y1, x2, y2) {}
 	MyLineF(const QPointF& p1, const QPointF& p2) : QLineF(p1, p2) {}
 

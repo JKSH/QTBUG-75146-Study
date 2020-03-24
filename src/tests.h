@@ -63,7 +63,7 @@ public:
 	void setRandomSeed(uint seed) { m_randomSeed = seed; }
 
 	void runBenchmarks() const;
-	// TODO: Compare outputs of different functions, check for discrepencies
+	void runAccuracyBenchmarks() const;
 
 private:
 	QVector<SegmentPair> getTestSet(Category category) const;
