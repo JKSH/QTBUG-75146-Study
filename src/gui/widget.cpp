@@ -120,6 +120,7 @@ void Widget::updateSegments()
 		output->setIntersectionType(type);
 	};
 
+	showIntersection(ui->result_crossHypot, &MyLineF::intersects_crossHypot);
 	showIntersection(ui->result_flsiOrig, &MyLineF::intersects_flsiOrig);
 	showIntersection(ui->result_flsiTweaked, &MyLineF::intersects_flsiTweaked);
 

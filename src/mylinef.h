@@ -46,6 +46,7 @@ public:
 	MyLineF(const QPointF& p1, const QPointF& p2) : QLineF(p1, p2) {}
 
 	// Using the old enum meanings with various algorithms
+	IntersectionType intersects_crossHypot(const QLineF& l, QPointF* intersectionPoint = nullptr) const;
 	IntersectionType intersects_flsiOrig(const QLineF& l, QPointF* intersectionPoint = nullptr) const;
 	IntersectionType intersects_flsiTweaked(const QLineF& l, QPointF* intersectionPoint = nullptr) const;
 	SegmentRelations intersects_gaussElim(const QLineF& l, QPointF* intersectionPoint = nullptr) const;
