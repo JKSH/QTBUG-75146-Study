@@ -10,14 +10,16 @@ SOURCES += \
     gui/draggablecircle.cpp \
     gui/widget.cpp \
     main.cpp \
-    mylinef.cpp
+    mylinef.cpp \
+    tests.cpp
 
 HEADERS += \
     algorithms.h \
     gui/draggablecircle.h \
     gui/flexibledoublespinbox.h \
     gui/widget.h \
-    mylinef.h
+    mylinef.h \
+    tests.h
 
 FORMS += \
 	gui/widget.ui

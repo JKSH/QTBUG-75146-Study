@@ -235,3 +235,48 @@ MyLineF::intersects_flsiV2(const QLineF& l, QPointF* intersectionPoint) const
 
 	return LinesIntersect | SegmentsIntersect;
 }
+
+/*
+	Implementation described and started by Edward Welbourne
+	See comment (2020-03-24) at https://codereview.qt-project.org/c/qt/qtbase/+/292807
+	- Replaced private member access with public getters, e.g. QLineF::pt1 -> QLineF::p1()
+	- Added declaration and definition for `tolerance` to allow compilation
+	- Fixed calculation of intersectionPoint by negating nb
+	- Code for parallel case not implemented (yet)
+*/
+QLineF::IntersectionType
+MyLineF::intersects_crossHypot(const QLineF& l, QPointF* intersectionPoint) const
+{
+	const QPointF a = p2() - p1();
+	const QPointF b = l.p1() - l.p2();
+	const QPointF c = p1() - l.p1();
+	const auto cross = [](QPointF u, QPointF v) -> qreal {
+	   return u.x() * v.y() - u.y() * v.x();
+	};
+	const qreal denominator = cross(a, b);
+	const qreal lena = std::hypot(a.x(), a.y());
+	const qreal lenb = std::hypot(b.x(), b.y());
+	const qreal ca = cross(c, a);
+	const qreal bc = cross(b, c);
+
+	qreal tolerance = std::numeric_limits<qreal>::epsilon();
+	if (abs(denominator) <= tolerance * lena * lenb) {
+		// Degenerate (parallel, or a line has zero length)
+		const qreal lenc = std::hypot(c.x(), c.y());
+		if (abs(ca) > tolerance * lenc * lena || abs(bc) > tolerance * lenc * lenb)
+			return NoIntersection;
+		bool overlap = false;
+		if (intersectionPoint) {
+			// Find mid-point of overlap or gap
+		} else {
+			// Merely find *whether* the lines overlap
+		}
+		return overlap ? BoundedIntersection : UnboundedIntersection;
+	}
+	// The prior code is essentially good enough:
+	const qreal na = bc / denominator;
+	const qreal nb = -ca / denominator;
+	if (intersectionPoint)
+		*intersectionPoint = abs(na) > abs(nb) ? l.p1() + nb * b : p1() + na * a;
+	return (na < 0 || na > 1 || nb < 0 || nb > 1) ? UnboundedIntersection : BoundedIntersection;
+}
