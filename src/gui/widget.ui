@@ -379,7 +379,7 @@
         </spacer>
        </item>
        <item row="9" column="1" colspan="2">
-        <widget class="ResultWidget" name="result_eddy" native="true"/>
+        <widget class="ResultWidget" name="result_crossHypot" native="true"/>
        </item>
        <item row="9" column="0">
         <widget class="QLabel" name="label_14">

@@ -238,13 +238,13 @@ MyLineF::intersects_flsiV2(const QLineF& l, QPointF* intersectionPoint) const
 
 /*
 	Implementation described and started by Edward Welbourne
-	https://codereview.qt-project.org/c/qt/qtbase/+/292807
+	See comment (2020-03-24) at https://codereview.qt-project.org/c/qt/qtbase/+/292807
 	- Replaced private member access with public getters, e.g. QLineF::pt1 -> QLineF::p1()
 	- Added declaration and definition for `tolerance` to allow compilation
 	- Code for parallel case not implemented (yet)
 */
 QLineF::IntersectionType
-MyLineF::intersects_eddy(const QLineF& l, QPointF* intersectionPoint) const
+MyLineF::intersects_crossHypot(const QLineF& l, QPointF* intersectionPoint) const
 {
 	const QPointF a = p2() - p1();
 	const QPointF b = l.p1() - l.p2();
