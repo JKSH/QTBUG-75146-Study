@@ -241,6 +241,7 @@ MyLineF::intersects_flsiV2(const QLineF& l, QPointF* intersectionPoint) const
 	See comment (2020-03-24) at https://codereview.qt-project.org/c/qt/qtbase/+/292807
 	- Replaced private member access with public getters, e.g. QLineF::pt1 -> QLineF::p1()
 	- Added declaration and definition for `tolerance` to allow compilation
+	- Fixed calculation of intersectionPoint by negating nb
 	- Code for parallel case not implemented (yet)
 */
 QLineF::IntersectionType
@@ -274,7 +275,7 @@ MyLineF::intersects_crossHypot(const QLineF& l, QPointF* intersectionPoint) cons
 	}
 	// The prior code is essentially good enough:
 	const qreal na = bc / denominator;
-	const qreal nb = ca / denominator;
+	const qreal nb = -ca / denominator;
 	if (intersectionPoint)
 		*intersectionPoint = abs(na) > abs(nb) ? l.p1() + nb * b : p1() + na * a;
 	return (na < 0 || na > 1 || nb < 0 || nb > 1) ? UnboundedIntersection : BoundedIntersection;
