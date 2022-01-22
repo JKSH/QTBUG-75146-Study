@@ -108,15 +108,16 @@ void Benchmarker::runSpeedBenchmarks() const
 
 		QTextStream(stdout) << benchmarkEnum.valueToKey(category) << '\n';
 
+		volatile int result = 0;
+
+		QPointF p(Q_QNAN, Q_QNAN);
 		for (auto funcInfo : testFunctions)
 		{
 			timer.start();
 			for (int j = 0; j < m_iterationsPerFunction; ++j)
 			{
 				int k = j % testSet.count();
-				QPointF p(Q_QNAN, Q_QNAN);
-
-				funcInfo.func( &(testSet[k].l1), testSet[k].l2, &p);
+				result = funcInfo.func( &(testSet[k].l1), testSet[k].l2, &p);
 				// TODO: Ensure dead code elimination doesn't occur?
 			}
 			qreal duration = timer.nsecsElapsed();
