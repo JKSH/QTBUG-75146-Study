@@ -74,4 +74,20 @@ inline QTextStream & operator << (QTextStream & out, const MyLineF::SegmentRelat
 	return out;
 }
 
+inline QLineF::IntersectionType toIntersectionType(MyLineF::SegmentRelations relation)
+{
+	if (relation.testFlag(MyLineF::Parallel))  {
+		if (!relation.testFlag(MyLineF::LinesIntersect) && !relation.testFlag(MyLineF::SegmentsIntersect))
+			return QLineF::NoIntersection;
+		else
+			return relation.testFlag(MyLineF::SegmentsIntersect) ? QLineF::BoundedIntersection : QLineF::UnboundedIntersection;
+	}
+	else if (relation.testFlag(MyLineF::SegmentsIntersect))
+		return QLineF::BoundedIntersection;
+	else if (relation.testFlag(MyLineF::LinesIntersect))
+		return QLineF::UnboundedIntersection;
+
+	return QLineF::NoIntersection;
+}
+
 #endif // MYLINEF_H

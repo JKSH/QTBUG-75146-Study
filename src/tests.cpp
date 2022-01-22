@@ -14,16 +14,17 @@ struct TestFunctionInfo
 {
 	QString name;
 	IntersectionFunc func;
+	bool convert;
 };
 
 const QVector<TestFunctionInfo> testFunctions
 {
-	{"intersects_crossHypot ", &MyLineF::intersects_crossHypot},
-	{"intersects_flsiOrig   ", &MyLineF::intersects_flsiOrig},
-	{"intersects_flsiTweaked", &MyLineF::intersects_flsiTweaked},
-	{"intersects_flsiV2     ", &MyLineF::intersects_flsiV2},
-	{"intersects_XflsiOrigX  ", &MyLineF::intersects_flsiOrigX},
-	{"intersects_gaussElim  ", &MyLineF::intersects_gaussElim}
+	{"intersects_crossHypot ", &MyLineF::intersects_crossHypot, false},
+	{"intersects_flsiOrig   ", &MyLineF::intersects_flsiOrig, false},
+	{"intersects_flsiTweaked", &MyLineF::intersects_flsiTweaked, false},
+	{"intersects_flsiV2     ", &MyLineF::intersects_flsiV2, true},
+	{"intersects_XflsiOrigX  ", &MyLineF::intersects_flsiOrigX, false},
+	{"intersects_gaussElim  ", &MyLineF::intersects_gaussElim, false}
 };
 
 static QVector<SegmentPair>
@@ -108,7 +109,8 @@ void Benchmarker::runSpeedBenchmarks() const
 
 		QTextStream(stdout) << benchmarkEnum.valueToKey(category) << '\n';
 
-		volatile int result = 0;
+		volatile int result = 0;	// Ensure dead code elimination doesn't occur
+		Q_UNUSED(result);
 
 		QPointF p(Q_QNAN, Q_QNAN);
 		for (auto funcInfo : testFunctions)
@@ -118,7 +120,6 @@ void Benchmarker::runSpeedBenchmarks() const
 			{
 				int k = j % testSet.count();
 				result = funcInfo.func( &(testSet[k].l1), testSet[k].l2, &p);
-				// TODO: Ensure dead code elimination doesn't occur?
 			}
 			qreal duration = timer.nsecsElapsed();
 			QTextStream(stdout) << QString("\t%1:\t%2 ns per call\n").arg(funcInfo.name).arg(duration/m_iterationsPerFunction);
@@ -170,44 +171,34 @@ void Benchmarker::runAccuracyBenchmarks() const
 
 		for (int j = 0; j < testSet.count(); ++j)
 		{
-			QPointF pRef;
-			QLineF::IntersectionType expectedIntersection;
-
-
 			// ASSUMPTION: Gaussian elimination is the last function in the vector.
 			//             We're using it as the gold standard.
-			for (int k = testFunctions.count()-1; k >= 0; --k)
-			{
-				QPointF p(Q_QNAN, Q_QNAN);
-				int intersection = testFunctions[k].func( &(testSet[j].l1), testSet[j].l2, &p);
+			Q_ASSERT(testFunctions.last().name.contains("gauss"));
+			QPointF expectedPoint;
+			MyLineF::SegmentRelations relations = MyLineF::SegmentRelations(testFunctions.last().func( &(testSet[j].l1), testSet[j].l2, &expectedPoint));
+			QLineF::IntersectionType expectedIntersection = toIntersectionType(relations);
 
-				if (testFunctions[k].name.contains("gauss")) {
-					pRef = p;
-					MyLineF::SegmentRelations relation(intersection);
-					if (relation.testFlag(MyLineF::Parallel))  {
-						if (!relation.testFlag(MyLineF::LinesIntersect) && !relation.testFlag(MyLineF::SegmentsIntersect))
-							expectedIntersection = QLineF::NoIntersection;
-						else
-							expectedIntersection = relation.testFlag(MyLineF::SegmentsIntersect) ? QLineF::BoundedIntersection : QLineF::UnboundedIntersection;
-					}
-					else if (relation.testFlag(MyLineF::SegmentsIntersect))
-						expectedIntersection = QLineF::BoundedIntersection;
-					else if (relation.testFlag(MyLineF::LinesIntersect))
-						expectedIntersection = QLineF::UnboundedIntersection;
-					else
-						expectedIntersection = QLineF::NoIntersection;
+			for (int k = 0, count = testFunctions.count() - 1; k < count; k++)
+			{
+				const TestFunctionInfo & testFunction = testFunctions[k];
+
+				QPointF p(Q_QNAN, Q_QNAN);
+				int intersection = testFunction.func( &(testSet[j].l1), testSet[j].l2, &p);
+
+				if (testFunction.convert)
+					intersection = toIntersectionType(MyLineF::SegmentRelations(intersection));
+
+				qreal diff = std::numeric_limits<qreal>::infinity();
+
+				if (expectedIntersection == QLineF::IntersectionType(intersection)) {
+					QPointF offset = expectedPoint - p;
+					diff = expectedIntersection == QLineF::NoIntersection ? 0 : std::sqrt(offset.x() * offset.x() + offset.y() * offset.y());
 				}
 				else  {
-					qreal diff = std::numeric_limits<qreal>::infinity();
-					if (QLineF::IntersectionType(intersection) == expectedIntersection) {
-						QPointF offset = pRef - p;
-						diff = std::sqrt(offset.x() * offset.x() + offset.y() * offset.y());
-					}
-					else
-						int z= 0;
-					if (diff > checkMap[testFunctions[k].name].diff)
-						checkMap[testFunctions[k].name] = AccuracyCheck{testSet[j], diff};
+					int z= 0;
 				}
+				if (diff > checkMap[testFunctions[k].name].diff)
+					checkMap[testFunctions[k].name] = AccuracyCheck{testSet[j], diff};
 			}
 		}
 		for (auto key : checkMap.keys())
