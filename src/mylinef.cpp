@@ -280,3 +280,38 @@ MyLineF::intersects_crossHypot(const QLineF& l, QPointF* intersectionPoint) cons
 		*intersectionPoint = abs(na) > abs(nb) ? l.p1() + nb * b : p1() + na * a;
 	return (na < 0 || na > 1 || nb < 0 || nb > 1) ? UnboundedIntersection : BoundedIntersection;
 }
+
+
+/*
+	Based on Franklin Antonio's "Faster Line Segment Intersection" algorithm from the book
+	"Graphics Gems III".
+*/
+QLineF::IntersectionType
+MyLineF::intersects_flsiOrigX(const QLineF &l, QPointF *intersectionPoint) const
+{
+	// ipmlementation is based on Graphics Gems III's "Faster Line Segment Intersection"
+	const QPointF a = p2() - p1();
+	const QPointF b = l.p1() - l.p2();
+	const QPointF c = p1() - l.p1();
+
+	const qreal length = a.x() * a.x() + a.y() * a.y();
+	const qreal denominator = a.y() * b.x() - a.x() * b.y();
+//    if (!std::isnormal(denominator) || std::abs(denominator) < length * std::numeric_limits<qreal>::epsilon())
+//        return NoIntersection;
+	if (!std::isfinite(denominator) || std::abs(denominator) < length * std::numeric_limits<qreal>::epsilon())
+		return NoIntersection;
+
+	const qreal na = b.y() * c.x() - b.x() * c.y();
+	if (intersectionPoint)  {
+		*intersectionPoint = p1() + a * (na / denominator);
+	}
+
+	if (na < 0 || na > denominator)
+		return UnboundedIntersection;
+
+	const qreal nb = a.x() * c.y() - a.y() * c.x();
+	if (nb < 0 || nb > denominator)
+		return UnboundedIntersection;
+
+	return BoundedIntersection;
+}

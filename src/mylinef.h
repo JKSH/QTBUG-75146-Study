@@ -3,6 +3,7 @@
 
 #include <QFlags>
 #include <QLineF>
+#include <QTextStream>
 
 #include <vector>
 
@@ -48,6 +49,7 @@ public:
 	// Using the old enum meanings with various algorithms
 	IntersectionType intersects_crossHypot(const QLineF& l, QPointF* intersectionPoint = nullptr) const;
 	IntersectionType intersects_flsiOrig(const QLineF& l, QPointF* intersectionPoint = nullptr) const;
+	IntersectionType intersects_flsiOrigX(const QLineF& l, QPointF* intersectionPoint = nullptr) const;
 	IntersectionType intersects_flsiTweaked(const QLineF& l, QPointF* intersectionPoint = nullptr) const;
 	SegmentRelations intersects_gaussElim(const QLineF& l, QPointF* intersectionPoint = nullptr) const;
 
@@ -55,5 +57,21 @@ public:
 	SegmentRelations intersects_flsiV2(const QLineF& l, QPointF* intersectionPoint = nullptr) const;
 };
 Q_DECLARE_OPERATORS_FOR_FLAGS(MyLineF::SegmentRelations)
+
+inline QTextStream & operator << (QTextStream & out, const MyLineF::SegmentRelations & relation)
+{
+	QStringList items;
+	if (relation.testFlag(MyLineF::Parallel))
+		items << "Parallel";
+	else if (relation.testFlag(MyLineF::SegmentsIntersect))
+		items << "SegmentsIntersect";
+	else if (relation.testFlag(MyLineF::LinesIntersect))
+		items << "LinesIntersect";
+	else if (relation.testFlag(MyLineF::NoRelation))
+		items << "NoRelation";
+
+	out << items.join(" | ");
+	return out;
+}
 
 #endif // MYLINEF_H
