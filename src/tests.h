@@ -5,6 +5,8 @@
 
 #include <QMap>
 #include <QMetaObject>
+#include <QTextStream>
+#include <QMetaEnum>
 
 struct EndpointCoords
 {
@@ -72,5 +74,34 @@ private:
 	int m_nMonteCarloCases = 100000;
 	uint m_randomSeed = 1;
 };
+
+inline QTextStream & operator << (QTextStream & out, const QPointF & point)
+{
+	out << QString("(%1, %2)").arg(point.x()).arg(point.y());
+	return out;
+}
+
+inline QTextStream & operator << (QTextStream & out, const QLineF::IntersectionType & intersection)
+{
+	switch(intersection)
+	{
+	case QLineF::NoIntersection:
+		out << "NoIntersection";
+		break;
+	case QLineF::BoundedIntersection:
+		out << "BoundedIntersection";
+		break;
+	case QLineF::UnboundedIntersection:
+		out << "UnboundedIntersection";
+		break;
+	}
+	return out;
+}
+
+inline bool qFuzzyIsNull(const QPointF & p)
+{
+	return qFuzzyIsNull(p.x()) && qFuzzyIsNull(p.y());
+}
+
 
 #endif // TESTS_H

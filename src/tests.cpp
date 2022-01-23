@@ -23,7 +23,7 @@ const QVector<TestFunctionInfo> testFunctions
 	{"intersects_flsiOrig   ", &MyLineF::intersects_flsiOrig, false},
 	{"intersects_flsiTweaked", &MyLineF::intersects_flsiTweaked, false},
 	{"intersects_flsiV2     ", &MyLineF::intersects_flsiV2, true},
-	{"intersects_XflsiOrigX  ", &MyLineF::intersects_flsiOrigX, false},
+	{"intersects_flsiOrigX  ", &MyLineF::intersects_flsiOrigX, false},
 	{"intersects_gaussElim  ", &MyLineF::intersects_gaussElim, false}
 };
 
@@ -133,7 +133,7 @@ struct AccuracyCheck
 {
 	QString printSegmentCoords() const
 	{
-		return QString("{(%1, %2), (%3, %4)} | {(%5, %6), (%7, %8)}")
+		return QString("{(%1, %2), (%3, %4)} | {(%5, %6), (%7, %8)} \n Expected @ (%9, %10) \n Max error @ (%11, %12)")
 				.arg(segments.l1.p1().x())
 				.arg(segments.l1.p1().y())
 				.arg(segments.l1.p2().x())
@@ -141,11 +141,16 @@ struct AccuracyCheck
 				.arg(segments.l2.p1().x())
 				.arg(segments.l2.p1().y())
 				.arg(segments.l2.p2().x())
-				.arg(segments.l2.p2().y());
+				.arg(segments.l2.p2().y())
+				.arg(expected.x())
+				.arg(expected.y())
+				.arg(result.x())
+				.arg(result.y());
 	}
 
 	SegmentPair segments;
 	qreal diff;
+	QPointF expected, result;
 };
 
 void Benchmarker::runAccuracyBenchmarks() const
@@ -188,17 +193,19 @@ void Benchmarker::runAccuracyBenchmarks() const
 				if (testFunction.convert)
 					intersection = toIntersectionType(MyLineF::SegmentRelations(intersection));
 
-				qreal diff = std::numeric_limits<qreal>::infinity();
-
-				if (expectedIntersection == QLineF::IntersectionType(intersection)) {
+				qreal diff = 0;
+				if (expectedIntersection != QLineF::IntersectionType(intersection))
+					diff = std::numeric_limits<qreal>::infinity();
+				else if (expectedIntersection != QLineF::NoIntersection) {
 					QPointF offset = expectedPoint - p;
-					diff = expectedIntersection == QLineF::NoIntersection ? 0 : std::sqrt(offset.x() * offset.x() + offset.y() * offset.y());
+					qreal length = expectedPoint.manhattanLength();
+					diff = expectedIntersection == QLineF::NoIntersection ? 0 : offset.manhattanLength();
+					if (!qFuzzyIsNull(expectedPoint))
+						diff /= length;		// We want to use relative accuracy here
 				}
-				else  {
-					int z= 0;
-				}
+
 				if (diff > checkMap[testFunctions[k].name].diff)
-					checkMap[testFunctions[k].name] = AccuracyCheck{testSet[j], diff};
+					checkMap[testFunctions[k].name] = AccuracyCheck{testSet[j], diff, expectedPoint, p};
 			}
 		}
 		for (auto key : checkMap.keys())
