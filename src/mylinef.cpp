@@ -281,6 +281,8 @@ MyLineF::intersects_crossHypot(const QLineF& l, QPointF* intersectionPoint) cons
 	return (na < 0 || na > 1 || nb < 0 || nb > 1) ? UnboundedIntersection : BoundedIntersection;
 }
 
+#include <QDebug>
+
 /*
 	Based on Franklin Antonio's "Faster Line Segment Intersection" algorithm from the book
 	"Graphics Gems III".
@@ -290,19 +292,22 @@ MyLineF::intersects_crossHypot(const QLineF& l, QPointF* intersectionPoint) cons
 QLineF::IntersectionType
 MyLineF::intersects_flsiOrigX(const QLineF &l, QPointF *intersectionPoint) const
 {
+	constexpr qreal tolerance = 1000;
+
 	// ipmlementation is based on Graphics Gems III's "Faster Line Segment Intersection"
 	const QPointF a = p2() - p1();
 	const QPointF b = l.p1() - l.p2();
 	const QPointF c = p1() - l.p1();
 
-	const qreal denominator = std::fma(a.y(), b.x(), -a.x() * b.y());
+	const qreal axby = a.x() * b.y();
+	const qreal denominator = std::fma(a.y(), b.x(), -axby);
 	if (!std::isfinite(denominator))
 		return NoIntersection;
 
 	const qreal length = std::fma(a.x(), a.x(), a.y() * a.y());
-	const qreal epsilon = length * std::numeric_limits<qreal>::epsilon();
+	const qreal epsilon = tolerance * length * std::numeric_limits<qreal>::epsilon();
 
-	if (std::abs(denominator) < epsilon)  {
+	if (std::abs(denominator) < epsilon) [[unlikely]] {
 		const qreal r = std::fma(a.y(), c.x(), -a.x() * c.y());
 		if (std::abs(r) >= epsilon)
 			return NoIntersection;
@@ -313,45 +318,40 @@ MyLineF::intersects_flsiOrigX(const QLineF &l, QPointF *intersectionPoint) const
 
 		// Colinear segments
 		const QPointF p2 = l.p2() - p1();
-		qreal n1 = -std::fma(a.x(), c.x(), a.y() * c.y());
+		const qreal n1 = -std::fma(a.x(), c.x(), a.y() * c.y());
 		const qreal n2 = std::fma(a.x(), p2.x(), a.y() * p2.y());
 
 		if (std::signbit(n1) != std::signbit(n2) || n1 < 0) {
-			n1 = std::max(n1, n2);
-			if (n1 > length) {
+			const qreal n = std::max(n1, n2);
+			if (n > length) {
 				if (intersectionPoint)
 					*intersectionPoint = pointAt(0.5 * length);
 				return BoundedIntersection;
 			}
 			else  {
 				if (intersectionPoint)
-					*intersectionPoint = pointAt(0.5 * n1);
-				return n1 < 0 ? UnboundedIntersection : BoundedIntersection;
+					*intersectionPoint = pointAt(0.5 * n);
+				return n < 0 ? UnboundedIntersection : BoundedIntersection;
 			}
 		}
 		else  {
-			n1 = std::min(n1, n2);
-			if (n1 > length)  {
+			const qreal n = std::min(n1, n2);
+			if (n > length)  {
 				if (intersectionPoint)
-					*intersectionPoint = pointAt(0.5 * (length + n1));
+					*intersectionPoint = pointAt(0.5 * (length + n));
 				return UnboundedIntersection;
 			}
 			else  {
 				if (intersectionPoint)
-					*intersectionPoint = (n2 > length) ? pointAt(0.5 * (length + n1)) : pointAt(0.5 * (n1 + n2));
+					*intersectionPoint = (n2 > length) ? pointAt(0.5 * (length + n)) : pointAt(0.5 * (n1 + n2));
 				return BoundedIntersection;
 			}
 		}
 	}
 
-	const qreal na = std::fma(b.y(), c.x(), -b.x() * c.y());
-	if (intersectionPoint)  {
-		const qreal scale = 1 / denominator;		// Do the division iff we really need to
-		*intersectionPoint = QPointF(
-			scale * std::fma(a.x(), na, denominator * p1().x()),
-			scale * std::fma(a.y(), na, denominator * p1().y())
-		);
-	}
+	const qreal na = b.y() * c.x() - b.x() * c.y();
+	if (intersectionPoint)	// Do the division iff we really need to
+		*intersectionPoint = p1() + a * (na / denominator);
 
 	if (denominator > 0)  {
 		if (na < 0 || na > denominator)
@@ -360,7 +360,7 @@ MyLineF::intersects_flsiOrigX(const QLineF &l, QPointF *intersectionPoint) const
 	else if (na > 0 || na < denominator)
 		return UnboundedIntersection;
 
-	const qreal nb = std::fma(a.x(), c.y(), -a.y() * c.x());
+	const qreal nb = a.x() * c.y() - a.y() * c.x();
 	if (denominator > 0)  {
 		if (nb < 0 || nb > denominator)
 			return UnboundedIntersection;

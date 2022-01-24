@@ -199,9 +199,13 @@ void Benchmarker::runAccuracyBenchmarks() const
 				else if (expectedIntersection != QLineF::NoIntersection) {
 					QPointF offset = expectedPoint - p;
 					qreal length = expectedPoint.manhattanLength();
-					diff = expectedIntersection == QLineF::NoIntersection ? 0 : offset.manhattanLength();
-					if (!qFuzzyIsNull(expectedPoint))
-						diff /= length;		// We want to use relative accuracy here
+					if (!std::isnan(length))  {
+						diff = expectedIntersection == QLineF::NoIntersection ? 0 : offset.manhattanLength();
+						if (!qFuzzyIsNull(expectedPoint))
+							diff /= length;		// We want to use relative accuracy here
+					}
+					else
+						diff = std::numeric_limits<qreal>::infinity();
 				}
 
 				if (diff > checkMap[testFunctions[k].name].diff)
