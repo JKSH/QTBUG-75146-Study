@@ -3,6 +3,7 @@
 
 #include "mylinef.h"
 
+#include <limits>
 #include <cmath>
 
 namespace Algo

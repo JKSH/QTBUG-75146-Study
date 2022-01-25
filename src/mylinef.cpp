@@ -280,3 +280,90 @@ MyLineF::intersects_crossHypot(const QLineF& l, QPointF* intersectionPoint) cons
 		*intersectionPoint = abs(na) > abs(nb) ? l.p1() + nb * b : p1() + na * a;
 	return (na < 0 || na > 1 || nb < 0 || nb > 1) ? UnboundedIntersection : BoundedIntersection;
 }
+
+/*
+	Based on Franklin Antonio's "Faster Line Segment Intersection" algorithm from the book
+	"Graphics Gems III".
+
+	- Modifications to stabilize by K. Shegunov
+*/
+QLineF::IntersectionType
+MyLineF::intersects_flsiOrigX(const QLineF &l, QPointF *intersectionPoint) const
+{
+	constexpr qreal tolerance = 1000;
+
+	// ipmlementation is based on Graphics Gems III's "Faster Line Segment Intersection"
+	const QPointF a = p2() - p1();
+	const QPointF b = l.p1() - l.p2();
+	const QPointF c = p1() - l.p1();
+
+	auto pointAt = [this, &a] (const qreal at) noexcept -> QPointF {
+		return p1() + at * a;
+	};
+
+	const qreal denominator = a.y() * b.x() - a.x() * b.y();
+	if (!std::isfinite(denominator))
+		return NoIntersection;
+
+	const qreal length = a.x() * a.x() + a.y() * a.y();
+	const qreal epsilon = tolerance * length * std::numeric_limits<qreal>::epsilon();
+
+	if (std::abs(denominator) < epsilon) [[unlikely]] {
+		const qreal r = a.y() * c.x() - a.x() * c.y();
+		if (std::abs(r) >= epsilon)
+			return NoIntersection;
+
+		// Colinear segments
+		const QPointF d = l.p2() - p1();
+		const qreal n1 = -a.y() * c.y() - a.x() * c.x();
+		const qreal n2 = a.x() * d.x() + a.y() * d.y();
+
+		if (std::signbit(n1) != std::signbit(n2) || n1 < 0) {
+			const qreal n = std::max(n1, n2);
+			if (n > length) {
+				if (intersectionPoint)
+					*intersectionPoint = pointAt(0.5);
+				return BoundedIntersection;
+			}
+			else  {
+				if (intersectionPoint)
+					*intersectionPoint = pointAt(0.5 * n / length);
+				return n < 0 ? UnboundedIntersection : BoundedIntersection;
+			}
+		}
+		else  {
+			const qreal n = std::min(n1, n2);
+			if (n > length)  {
+				if (intersectionPoint)
+					*intersectionPoint = pointAt(0.5 * (1 + n / length));
+				return UnboundedIntersection;
+			}
+			else  {
+				if (intersectionPoint)
+					*intersectionPoint = (n2 > length) ? pointAt(0.5 * (1 + n / length)) : pointAt(0.5 * (n1 + n2) / length);
+				return BoundedIntersection;
+			}
+		}
+	}
+
+	const qreal na = b.y() * c.x() - b.x() * c.y();
+	if (intersectionPoint)	// Do the division iff we really need to
+		*intersectionPoint = pointAt(na / denominator);
+
+	if (denominator > 0)  {
+		if (na < 0 || na > denominator)
+			return UnboundedIntersection;
+	}
+	else if (na > 0 || na < denominator)
+		return UnboundedIntersection;
+
+	const qreal nb = a.x() * c.y() - a.y() * c.x();
+	if (denominator > 0)  {
+		if (nb < 0 || nb > denominator)
+			return UnboundedIntersection;
+	}
+	else if (nb > 0 || nb < denominator)
+		return UnboundedIntersection;
+
+	return BoundedIntersection;
+}

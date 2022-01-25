@@ -25,7 +25,7 @@ Algo::analyzeCollinearSegments(const QLineF& s1, const QLineF& s2, QPointF* oneI
 		TaggedPoint{s1.p2(), 1},
 		TaggedPoint{s2.p1(), 2},
 		TaggedPoint{s2.p2(), 2}
-	};	
+	};
 
 	// Sort the endpoints by their coordinates on one axis
 	const bool vertical = Algo::robustFuzzyCompare(s1.p1().x(), s1.p2().x(), zeroTolerance);

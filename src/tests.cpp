@@ -1,5 +1,8 @@
 #include "tests.h"
 
+#include <cmath>
+#include <limits>
+
 #include <QDebug>
 #include <QElapsedTimer>
 #include <QMetaEnum>
@@ -11,15 +14,17 @@ struct TestFunctionInfo
 {
 	QString name;
 	IntersectionFunc func;
+	bool convert;
 };
 
 const QVector<TestFunctionInfo> testFunctions
 {
-	{"intersects_crossHypot ", &MyLineF::intersects_crossHypot},
-	{"intersects_flsiOrig   ", &MyLineF::intersects_flsiOrig},
-	{"intersects_flsiTweaked", &MyLineF::intersects_flsiTweaked},
-	{"intersects_flsiV2     ", &MyLineF::intersects_flsiV2},
-	{"intersects_gaussElim  ", &MyLineF::intersects_gaussElim}
+	{"intersects_crossHypot ", &MyLineF::intersects_crossHypot, false},
+	{"intersects_flsiOrig   ", &MyLineF::intersects_flsiOrig, false},
+	{"intersects_flsiTweaked", &MyLineF::intersects_flsiTweaked, false},
+	{"intersects_flsiV2     ", &MyLineF::intersects_flsiV2, true},
+	{"intersects_flsiOrigX  ", &MyLineF::intersects_flsiOrigX, false},
+	{"intersects_gaussElim  ", &MyLineF::intersects_gaussElim, false}
 };
 
 static QVector<SegmentPair>
@@ -104,16 +109,17 @@ void Benchmarker::runSpeedBenchmarks() const
 
 		QTextStream(stdout) << benchmarkEnum.valueToKey(category) << '\n';
 
+		volatile int result = 0;	// Ensure dead code elimination doesn't occur
+		Q_UNUSED(result);
+
+		QPointF p(Q_QNAN, Q_QNAN);
 		for (auto funcInfo : testFunctions)
 		{
 			timer.start();
 			for (int j = 0; j < m_iterationsPerFunction; ++j)
 			{
 				int k = j % testSet.count();
-				QPointF p(Q_QNAN, Q_QNAN);
-
-				funcInfo.func( &(testSet[k].l1), testSet[k].l2, &p);
-				// TODO: Ensure dead code elimination doesn't occur?
+				result = funcInfo.func( &(testSet[k].l1), testSet[k].l2, &p);
 			}
 			qreal duration = timer.nsecsElapsed();
 			QTextStream(stdout) << QString("\t%1:\t%2 ns per call\n").arg(funcInfo.name).arg(duration/m_iterationsPerFunction);
@@ -127,7 +133,7 @@ struct AccuracyCheck
 {
 	QString printSegmentCoords() const
 	{
-		return QString("{(%1, %2), (%3, %4)} | {(%5, %6), (%7, %8)}")
+		return QString("{(%1, %2), (%3, %4)} | {(%5, %6), (%7, %8)} \n Expected @ (%9, %10) \n Max error @ (%11, %12)")
 				.arg(segments.l1.p1().x())
 				.arg(segments.l1.p1().y())
 				.arg(segments.l1.p2().x())
@@ -135,19 +141,25 @@ struct AccuracyCheck
 				.arg(segments.l2.p1().x())
 				.arg(segments.l2.p1().y())
 				.arg(segments.l2.p2().x())
-				.arg(segments.l2.p2().y());
+				.arg(segments.l2.p2().y())
+				.arg(expected.x())
+				.arg(expected.y())
+				.arg(result.x())
+				.arg(result.y());
 	}
 
 	SegmentPair segments;
 	qreal diff;
+	QPointF expected, result;
 };
 
 void Benchmarker::runAccuracyBenchmarks() const
 {
-	QTextStream(stdout)
-			<< "==================="  "\n"
-			<< "Accuracy Benchmarks"  "\n"
-			<< "==================="  "\n";
+	QTextStream out(stdout);
+	out
+		<< "==================="  "\n"
+		<< "Accuracy Benchmarks"  "\n"
+		<< "==================="  "\n";
 
 	auto benchmarkEnum = QMetaEnum::fromType<Benchmarker::Category>();
 	for (int i = 0; i < benchmarkEnum.keyCount(); ++i)
@@ -156,29 +168,48 @@ void Benchmarker::runAccuracyBenchmarks() const
 		const auto category = static_cast<Benchmarker::Category>(i);
 		const auto testSet = getTestSet(category);
 
-		QTextStream(stdout)
-				<< benchmarkEnum.valueToKey(category)
-				<< QString(": %1 test cases\n").arg(testSet.count());
+		out
+			<< benchmarkEnum.valueToKey(category)
+			<< QString(": %1 test cases\n").arg(testSet.count());
 
 		QMap<QString, AccuracyCheck> checkMap;
 
 		for (int j = 0; j < testSet.count(); ++j)
 		{
-			QPointF pRef;
-
 			// ASSUMPTION: Gaussian elimination is the last function in the vector.
 			//             We're using it as the gold standard.
-			for (int k = testFunctions.count()-1; k >= 0; --k)
+			Q_ASSERT(testFunctions.last().name.contains("gauss"));
+			QPointF expectedPoint;
+			MyLineF::SegmentRelations relations = MyLineF::SegmentRelations(testFunctions.last().func( &(testSet[j].l1), testSet[j].l2, &expectedPoint));
+			QLineF::IntersectionType expectedIntersection = toIntersectionType(relations);
+
+			for (int k = 0, count = testFunctions.count() - 1; k < count; k++)
 			{
+				const TestFunctionInfo & testFunction = testFunctions[k];
+
 				QPointF p(Q_QNAN, Q_QNAN);
-				testFunctions[k].func( &(testSet[j].l1), testSet[j].l2, &p);
+				int intersection = testFunction.func( &(testSet[j].l1), testSet[j].l2, &p);
 
-				if (testFunctions[k].name.contains("gauss"))
-					pRef = p;
+				if (testFunction.convert)
+					intersection = toIntersectionType(MyLineF::SegmentRelations(intersection));
 
-				qreal diff = (pRef-p).manhattanLength();
+				qreal diff = 0;
+				if (expectedIntersection != QLineF::IntersectionType(intersection))
+					diff = std::numeric_limits<qreal>::infinity();
+				else if (expectedIntersection != QLineF::NoIntersection) {
+					QPointF offset = expectedPoint - p;
+					qreal length = expectedPoint.manhattanLength();
+					if (!std::isnan(length))  {
+						diff = expectedIntersection == QLineF::NoIntersection ? 0 : offset.manhattanLength();
+						if (!qFuzzyIsNull(expectedPoint))
+							diff /= length;		// We want to use relative accuracy here
+					}
+					else
+						diff = std::numeric_limits<qreal>::infinity();
+				}
+
 				if (diff > checkMap[testFunctions[k].name].diff)
-					checkMap[testFunctions[k].name] = AccuracyCheck{testSet[j], diff};
+					checkMap[testFunctions[k].name] = AccuracyCheck{testSet[j], diff, expectedPoint, p};
 			}
 		}
 		for (auto key : checkMap.keys())
@@ -186,9 +217,9 @@ void Benchmarker::runAccuracyBenchmarks() const
 			if (key.contains("gauss"))
 				continue;
 
-			QTextStream(stdout)
-					<< QString("\t%1:\tMax diff is %2\n").arg(key).arg(checkMap[key].diff)
-					<< "\t\t" << checkMap[key].printSegmentCoords() << "\n\n";
+			out
+				<< QString("\t%1:\tMax diff is %2\n").arg(key).arg(checkMap[key].diff)
+				<< "\t\t" << checkMap[key].printSegmentCoords() << "\n\n";
 		}
 	}
 }
